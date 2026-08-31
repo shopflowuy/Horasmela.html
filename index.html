@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Horas - HorasMel</title>
+  <style>
+    :root {
+      --primary: #4a90e2;
+      --primary-dark: #357abd;
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #dddddd;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 15px;
+      background-color: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary-dark);
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #555;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Grid de Resumen */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      text-align: center;
+    }
+
+    .summary-box {
+      background: #f8f9fa;
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .summary-box .val {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary-dark);
+      margin-top: 4px;
+    }
+
+    .summary-box .lbl {
+      font-size: 11px;
+      color: #777;
+      text-transform: uppercase;
+    }
+
+    /* Formularios */
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-export {
+      background: #27ae60;
+      font-size: 12px;
+      padding: 6px 12px;
+      width: auto;
+      margin-top: 0;
+    }
+
+    .btn-export:hover {
+      background: #219150;
+    }
+
+    /* Tabla de Registros */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background: #f1f3f5;
+      color: #495057;
+    }
+
+    .btn-del {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📋 HorasMel - Registro Mensual</h1>
+
+  <!-- Filtro y Resumen -->
+  <div class="card">
+    <div class="form-group">
+      <label for="filtroMes">Filtrar por Mes:</label>
+      <input type="month" id="filtroMes" onchange="renderizar()">
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="lbl">Días Trabal.</div>
+        <div class="val" id="resDias">0</div>
+      </div>
+      <div class="summary-box">
+        <div class="lbl">Hs Trab.</div>
+        <div class="val" id="resHoras">0.0</div>
+      </div>
+      <div class="summary-box">
+        <div class="lbl">A Cobrar</div>
+        <div class="val" id="resSaldo">$0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de Registro -->
+  <div class="card">
+    <div class="card-title">✍️ Registrar Jornada</div>
+    
+    <div class="form-group">
+      <label for="enfermero">Enfermero/a:</label>
+      <input type="text" id="enfermero" placeholder="Nombre del enfermero/a">
+    </div>
+
+    <div class="row-2">
+      <div class="form-group">
+        <label for="radio">Radio:</label>
+        <select id="radio">
+          <option value="900">900</option>
+          <option value="901">901</option>
+          <option value="902">902</option>
+          <option value="903">903</option>
+          <option value="904">904</option>
+          <option value="905">905</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha">Fecha:</label>
+        <input type="date" id="fecha">
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="form-group">
+        <label for="horaEntrada">Entrada:</label>
+        <input type="time" id="horaEntrada">
+      </div>
+      <div class="form-group">
+        <label for="horaSalida">Salida:</label>
+        <input type="time" id="horaSalida">
+      </div>
+    </div>
+
+    <button onclick="guardarJornada()">Guardar Jornada</button>
+  </div>
+
+  <!-- Histórico del mes -->
+  <div class="card">
+    <div class="card-title">
+      <span>📅 Detalle del Mes</span>
+      <button class="btn-export" onclick="exportarExcel()">📊 Exportar Excel</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Enfermero/a</th>
+          <th>Radio</th>
+          <th>Hs</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tablaCuerpo">
+        <!-- Se llena con JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <footer>Creado por Juanki Zao</footer>
+</div>
+
+<script>
+  const VALOR_HORA = 221;
+  let jornadas = JSON.parse(localStorage.getItem('horas_mel_data')) || [];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const hoy = new Date();
+    document.getElementById('fecha').value = hoy.toISOString().split('T')[0];
+    
+    const mesActual = hoy.toISOString().slice(0, 7);
+    document.getElementById('filtroMes').value = mesActual;
+
+    renderizar();
+  });
+
+  function guardarJornada() {
+    const enfermero = document.getElementById('enfermero').value.trim();
+    const radio = document.getElementById('radio').value;
+    const fecha = document.getElementById('fecha').value;
+    const horaEntrada = document.getElementById('horaEntrada').value;
+    const horaSalida = document.getElementById('horaSalida').value;
+
+    if (!enfermero || !fecha || !horaEntrada || !horaSalida) {
+      alert("Por favor completa el nombre del enfermero, fecha y horarios.");
+      return;
+    }
+
+    const entrada = new Date(`${fecha}T${horaEntrada}`);
+    const salida = new Date(`${fecha}T${horaSalida}`);
+
+    let diffMs = salida - entrada;
+
+    if (diffMs < 0) {
+      diffMs += 24 * 60 * 60 * 1000;
+    }
+
+    const horasTrabajadas = diffMs / (1000 * 60 * 60);
+
+    if (horasTrabajadas === 0) {
+      alert("La hora de salida debe ser distinta a la de entrada.");
+      return;
+    }
+
+    const nuevaJornada = {
+      id: Date.now(),
+      enfermero,
+      radio,
+      fecha,
+      horaEntrada,
+      horaSalida,
+      horas: horasTrabajadas
+    };
+
+    jornadas.push(nuevaJornada);
+    localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
+
+    // Guardar el nombre del enfermero por defecto para la próxima entrada
+    document.getElementById('horaEntrada').value = '';
+    document.getElementById('horaSalida').value = '';
+
+    renderizar();
+  }
+
+  function borrarJornada(id) {
+    if (confirm("¿Borrar este registro?")) {
+      jornadas = jornadas.filter(j => j.id !== id);
+      localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
+      renderizar();
+    }
+  }
+
+  function renderizar() {
+    const mesSeleccionado = document.getElementById('filtroMes').value;
+    const tbody = document.getElementById('tablaCuerpo');
+    tbody.innerHTML = '';
+
+    const jornadasFiltradas = jornadas.filter(j => j.fecha.startsWith(mesSeleccionado));
+    jornadasFiltradas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+    let totalHoras = 0;
+    const diasUnicos = new Set();
+
+    jornadasFiltradas.forEach(j => {
+      totalHoras += j.horas;
+      diasUnicos.add(j.fecha);
+
+      const tr = document.createElement('tr');
+      const partesFecha = j.fecha.split('-');
+      const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}`;
+
+      tr.innerHTML = `
+        <td>${fechaFormateada}<br><small style="color:#777">${j.horaEntrada}-${j.horaSalida}</small></td>
+        <td><strong>${j.enfermero}</strong></td>
+        <td>${j.radio}</td>
+        <td>${j.horas.toFixed(2)} hs</td>
+        <td><button class="btn-del" onclick="borrarJornada(${j.id})">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const saldoTotal = totalHoras * VALOR_HORA;
+
+    document.getElementById('resDias').innerText = diasUnicos.size;
+    document.getElementById('resHoras').innerText = totalHoras.toFixed(1);
+    document.getElementById('resSaldo').innerText = "$" + Math.round(saldoTotal).toLocaleString();
+  }
+
+  function exportarExcel() {
+    const mesSeleccionado = document.getElementById('filtroMes').value;
+    const jornadasFiltradas = jornadas.filter(j => j.fecha.startsWith(mesSeleccionado));
+
+    if (jornadasFiltradas.length === 0) {
+      alert("No hay registros guardados en este mes para exportar.");
+      return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,Fecha,Enfermero,Radio,Entrada,Salida,Horas Trabajadas,Monto ($221/h)\n";
+
+    jornadasFiltradas.forEach(j => {
+      const monto = (j.horas * VALOR_HORA).toFixed(2);
+      csvContent += `${j.fecha},"${j.enfermero}",${j.radio},${j.horaEntrada},${j.horaSalida},${j.horas.toFixed(2)},${monto}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Reporte_Horas_${mesSeleccionado}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+</script>
+
+</body>
+</html>
