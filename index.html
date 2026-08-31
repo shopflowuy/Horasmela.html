@@ -54,7 +54,7 @@
       align-items: center;
     }
 
-    /* Grid de Resumen Principal */
+    /* Resumen Principal */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -83,13 +83,13 @@
     }
 
     /* Lista de Horas por Chofer */
-    .choferes-list {
+    .choferes-box {
       margin-top: 15px;
       padding-top: 10px;
       border-top: 1px dashed var(--border);
     }
 
-    .chofer-item {
+    .chofer-linea {
       display: flex;
       justify-content: space-between;
       font-size: 13px;
@@ -142,7 +142,7 @@
 
     .btn-cancel {
       background: #888;
-      margin-top: 5px;
+      margin-top: 8px;
     }
 
     .btn-export {
@@ -153,7 +153,7 @@
       margin-top: 0;
     }
 
-    /* Tabla de Registros */
+    /* Tabla */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -172,7 +172,7 @@
       color: #495057;
     }
 
-    .actions-cell {
+    .acciones-grid {
       display: flex;
       gap: 4px;
       justify-content: center;
@@ -180,7 +180,7 @@
 
     .btn-action {
       border: none;
-      padding: 5px 8px;
+      padding: 6px 8px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 12px;
@@ -224,16 +224,15 @@
       </div>
     </div>
 
-    <!-- Desglose por Chofer -->
-    <div class="choferes-list">
-      <label style="color: #555; margin-bottom: 6px;">⏱️ Horas por Chofer:</label>
+    <div class="choferes-box">
+      <label style="color: #555; margin-bottom: 6px;">⏱️ Suma de Horas por Chofer:</label>
       <div id="resChoferes">
-        <!-- Se llena con JS -->
+        <!-- Generado con JS -->
       </div>
     </div>
   </div>
 
-  <!-- Formulario de Registro -->
+  <!-- Formulario de Registro / Edición -->
   <div class="card">
     <div class="card-title" id="formTitulo">✍️ Registrar Jornada</div>
 
@@ -276,10 +275,10 @@
     </div>
 
     <button id="btnGuardar" onclick="guardarJornada()">Guardar Jornada</button>
-    <button id="btnCancelar" class="btn-cancel" onclick="cancelarEdicion()" style="display: none;">Cancelar Edición</button>
+    <button id="btnCancelar" class="btn-cancel" onclick="limpiarFormulario()" style="display: none;">Cancelar Edición</button>
   </div>
 
-  <!-- Histórico del mes -->
+  <!-- Histórico -->
   <div class="card">
     <div class="card-title">
       <span>📅 Detalle del Mes</span>
@@ -295,12 +294,12 @@
         </tr>
       </thead>
       <tbody id="tablaCuerpo">
-        <!-- Se llena con JS -->
+        <!-- Generado con JS -->
       </tbody>
     </table>
   </div>
 
-  <footer>Creado por Juanki Zao</footer>
+  <footer>Creado por Juan Carlos Albin</footer>
 </div>
 
 <script>
@@ -334,7 +333,6 @@
     const salida = new Date(`${fecha}T${horaSalida}`);
 
     let diffMs = salida - entrada;
-
     if (diffMs < 0) {
       diffMs += 24 * 60 * 60 * 1000;
     }
@@ -347,9 +345,10 @@
     }
 
     if (editId) {
+      // Modificar existente
       jornadas = jornadas.map(j => j.id == editId ? {
         id: Number(editId),
-        chofer: chofer || 'N/A',
+        chofer: chofer || 'Sin nombre',
         radio,
         fecha,
         horaEntrada,
@@ -357,9 +356,10 @@
         horas: horasTrabajadas
       } : j);
     } else {
+      // Crear nuevo
       const nuevaJornada = {
         id: Date.now(),
-        chofer: chofer || 'N/A',
+        chofer: chofer || 'Sin nombre',
         radio,
         fecha,
         horaEntrada,
@@ -370,29 +370,29 @@
     }
 
     localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
-    cancelarEdicion();
+    limpiarFormulario();
     renderizar();
   }
 
-  function prepararEdicion(id) {
-    const j = jornadas.find(item => item.id === id);
-    if (!j) return;
+  function editarJornada(id) {
+    const reg = jornadas.find(j => j.id === id);
+    if (!reg) return;
 
-    document.getElementById('editId').value = j.id;
-    document.getElementById('chofer').value = j.chofer === 'N/A' ? '' : j.chofer;
-    document.getElementById('radio').value = j.radio;
-    document.getElementById('fecha').value = j.fecha;
-    document.getElementById('horaEntrada').value = j.horaEntrada;
-    document.getElementById('horaSalida').value = j.horaSalida;
+    document.getElementById('editId').value = reg.id;
+    document.getElementById('chofer').value = reg.chofer === 'Sin nombre' ? '' : reg.chofer;
+    document.getElementById('radio').value = reg.radio;
+    document.getElementById('fecha').value = reg.fecha;
+    document.getElementById('horaEntrada').value = reg.horaEntrada;
+    document.getElementById('horaSalida').value = reg.horaSalida;
 
     document.getElementById('formTitulo').innerText = "✏️ Modificar Jornada";
-    document.getElementById('btnGuardar').innerText = "Actualizar Registro";
+    document.getElementById('btnGuardar').innerText = "Guardar Cambios";
     document.getElementById('btnCancelar').style.display = "block";
-    
+
     window.scrollTo({ top: 150, behavior: 'smooth' });
   }
 
-  function cancelarEdicion() {
+  function limpiarFormulario() {
     document.getElementById('editId').value = '';
     document.getElementById('chofer').value = '';
     document.getElementById('horaEntrada').value = '';
@@ -421,16 +421,17 @@
     let totalHorasGlobal = 0;
     let totalHorasMelany = 0;
     const diasUnicos = new Set();
-    const horasPorChofer = {};
+    const sumaPorChofer = {};
 
     jornadasFiltradas.forEach(j => {
       totalHorasGlobal += j.horas;
       diasUnicos.add(j.fecha);
 
-      const choferNom = j.chofer.trim();
-      horasPorChofer[choferNom] = (horasPorChofer[choferNom] || 0) + j.horas;
+      const nombreChofer = j.chofer.trim();
+      sumaPorChofer[nombreChofer] = (sumaPorChofer[nombreChofer] || 0) + j.horas;
 
-      if (choferNom.toLowerCase().includes('melany')) {
+      // Sumar al saldo si se llama Melany (sin importar mayúsculas/minúsculas)
+      if (nombreChofer.toLowerCase().includes('melany')) {
         totalHorasMelany += j.horas;
       }
 
@@ -443,8 +444,8 @@
         <td>${j.radio}</td>
         <td>${j.horas.toFixed(2)} hs</td>
         <td>
-          <div class="actions-cell">
-            <button class="btn-action btn-edit" onclick="prepararEdicion(${j.id})">✏️</button>
+          <div class="acciones-grid">
+            <button class="btn-action btn-edit" onclick="editarJornada(${j.id})">✏️</button>
             <button class="btn-action btn-del" onclick="borrarJornada(${j.id})">✕</button>
           </div>
         </td>
@@ -452,25 +453,25 @@
       tbody.appendChild(tr);
     });
 
-    // Render summary boxes
+    // Actualizar resúmenes
     const saldoMelany = totalHorasMelany * VALOR_HORA;
     document.getElementById('resDias').innerText = diasUnicos.size;
     document.getElementById('resHoras').innerText = totalHorasGlobal.toFixed(1);
     document.getElementById('resSaldo').innerText = "$" + Math.round(saldoMelany).toLocaleString();
 
-    // Render horas por chofer list
-    const choferesContainer = document.getElementById('resChoferes');
-    choferesContainer.innerHTML = '';
-    const choferesNombres = Object.keys(horasPorChofer);
+    // Actualizar desglose de choferes
+    const divChoferes = document.getElementById('resChoferes');
+    divChoferes.innerHTML = '';
+    const listaNombres = Object.keys(sumaPorChofer);
 
-    if (choferesNombres.length === 0) {
-      choferesContainer.innerHTML = '<div class="chofer-item" style="color:#888;">No hay registros este mes</div>';
+    if (listaNombres.length === 0) {
+      divChoferes.innerHTML = '<div class="chofer-linea" style="color:#888;">No hay registros este mes</div>';
     } else {
-      choferesNombres.forEach(nombre => {
+      listaNombres.forEach(nombre => {
         const div = document.createElement('div');
-        div.className = 'chofer-item';
-        div.innerHTML = `<span><strong>${nombre}:</strong></span> <span>${horasPorChofer[nombre].toFixed(2)} hs</span>`;
-        choferesContainer.appendChild(div);
+        div.className = 'chofer-linea';
+        div.innerHTML = `<span><strong>${nombre}:</strong></span> <span>${sumaPorChofer[nombre].toFixed(2)} hs</span>`;
+        divChoferes.appendChild(div);
       });
     }
   }
