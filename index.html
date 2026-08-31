@@ -23,7 +23,7 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 650px;
       margin: 0 auto;
     }
 
@@ -145,7 +145,7 @@
       margin-top: 8px;
     }
 
-    .btn-export {
+    .btn-print {
       background: #27ae60;
       font-size: 12px;
       padding: 6px 12px;
@@ -189,11 +189,99 @@
     .btn-edit { background: #f39c12; color: white; }
     .btn-del { background: #e74c3c; color: white; }
 
+    /* Cabecera exclusiva para Impresión */
+    .print-header {
+      display: none;
+    }
+
     footer {
       text-align: center;
       margin-top: 30px;
       font-size: 12px;
       color: #888;
+    }
+
+    /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN (A4) */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 1.5cm;
+      }
+
+      body {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+      }
+
+      .container {
+        max-width: 100% !important;
+      }
+
+      /* Ocultar elementos innecesarios al imprimir */
+      h1, .card:nth-child(3), .btn-print, .acciones-grid, footer, .form-group label[for="filtroMes"], #filtroMes, .summary-grid {
+        display: none !important;
+      }
+
+      .card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* Mostrar cabecera de reporte */
+      .print-header {
+        display: block !important;
+        margin-bottom: 20px;
+      }
+
+      .print-header h2 {
+        font-size: 20px;
+        text-align: center;
+        margin-bottom: 15px;
+        text-decoration: underline;
+      }
+
+      .print-info-grid {
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .print-info-grid div {
+        margin-bottom: 3px;
+      }
+
+      .choferes-box {
+        border-top: 2px solid #000 !important;
+        margin-top: 15px !important;
+        padding-top: 10px !important;
+      }
+
+      .chofer-linea {
+        font-size: 13px !important;
+        padding: 2px 0 !important;
+      }
+
+      table {
+        margin-top: 20px !important;
+        border: 1px solid #000 !important;
+      }
+
+      th, td {
+        border: 1px solid #000 !important;
+        padding: 6px !important;
+        color: black !important;
+      }
+
+      th {
+        background-color: #f2f2f2 !important;
+        -webkit-print-color-adjust: exact;
+      }
+
+      th:last-child, td:last-child {
+        display: none !important; /* Oculta columna de acciones */
+      }
     }
   </style>
 </head>
@@ -201,6 +289,17 @@
 
 <div class="container">
   <h1>📋 HorasMel - Registro Mensual</h1>
+
+  <!-- Encabezado exclusivo para Impresión A4 -->
+  <div class="print-header">
+    <h2>Información de Horas de Arrendadores</h2>
+    <div class="print-info-grid">
+      <div><strong>Nombre del Chófer:</strong> Melany García</div>
+      <div><strong>Vehículo:</strong> Chevrolet Agile</div>
+      <div><strong>Matrícula:</strong> BEB 6518</div>
+      <div><strong>Mes:</strong> <span id="printMesTexto" style="font-weight: bold; text-transform: uppercase;"></span></div>
+    </div>
+  </div>
 
   <!-- Filtro y Resumen -->
   <div class="card">
@@ -225,7 +324,7 @@
     </div>
 
     <div class="choferes-box">
-      <label style="color: #555; margin-bottom: 6px;">⏱️ Suma de Horas por Chofer:</label>
+      <label style="font-weight: bold; margin-bottom: 6px; display: block;">⏱️ Suma de Horas por Chofer:</label>
       <div id="resChoferes">
         <!-- Generado con JS -->
       </div>
@@ -282,7 +381,7 @@
   <div class="card">
     <div class="card-title">
       <span>📅 Detalle del Mes</span>
-      <button class="btn-export" onclick="exportarExcel()">📊 Exportar Excel</button>
+      <button class="btn-print" onclick="imprimirPlanilla()">🖨️ Imprimir / Guardar PDF</button>
     </div>
     <table>
       <thead>
@@ -305,6 +404,11 @@
 <script>
   const VALOR_HORA = 221;
   let jornadas = JSON.parse(localStorage.getItem('horas_mel_data')) || [];
+
+  const NOMBRES_MESES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
 
   document.addEventListener('DOMContentLoaded', () => {
     const hoy = new Date();
@@ -345,7 +449,6 @@
     }
 
     if (editId) {
-      // Modificar existente
       jornadas = jornadas.map(j => j.id == editId ? {
         id: Number(editId),
         chofer: chofer || 'Sin nombre',
@@ -356,7 +459,6 @@
         horas: horasTrabajadas
       } : j);
     } else {
-      // Crear nuevo
       const nuevaJornada = {
         id: Date.now(),
         chofer: chofer || 'Sin nombre',
@@ -411,9 +513,17 @@
   }
 
   function renderizar() {
-    const mesSeleccionado = document.getElementById('filtroMes').value;
+    const mesSeleccionado = document.getElementById('filtroMes').value; // Formato "YYYY-MM"
     const tbody = document.getElementById('tablaCuerpo');
     tbody.innerHTML = '';
+
+    // Actualizar nombre del mes en cabecera de impresión
+    if (mesSeleccionado) {
+      const partesMes = mesSeleccionado.split('-');
+      const numMes = parseInt(partesMes[1], 10) - 1;
+      const anio = partesMes[0];
+      document.getElementById('printMesTexto').innerText = `${NOMBRES_MESES[numMes]} ${anio}`;
+    }
 
     const jornadasFiltradas = jornadas.filter(j => j.fecha.startsWith(mesSeleccionado));
     jornadasFiltradas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
@@ -430,7 +540,6 @@
       const nombreChofer = j.chofer.trim();
       sumaPorChofer[nombreChofer] = (sumaPorChofer[nombreChofer] || 0) + j.horas;
 
-      // Sumar al saldo si se llama Melany (sin importar mayúsculas/minúsculas)
       if (nombreChofer.toLowerCase().includes('melany')) {
         totalHorasMelany += j.horas;
       }
@@ -470,36 +579,14 @@
       listaNombres.forEach(nombre => {
         const div = document.createElement('div');
         div.className = 'chofer-linea';
-        div.innerHTML = `<span><strong>${nombre}:</strong></span> <span>${sumaPorChofer[nombre].toFixed(2)} hs</span>`;
+        div.innerHTML = `<span>${nombre}:</span> <strong>${sumaPorChofer[nombre].toFixed(2)} hs</strong>`;
         divChoferes.appendChild(div);
       });
     }
   }
 
-  function exportarExcel() {
-    const mesSeleccionado = document.getElementById('filtroMes').value;
-    const jornadasFiltradas = jornadas.filter(j => j.fecha.startsWith(mesSeleccionado));
-
-    if (jornadasFiltradas.length === 0) {
-      alert("No hay registros guardados en este mes para exportar.");
-      return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,Chofer,Fecha,Radio,Entrada,Salida,Horas Trabajadas,Monto Melany ($221/h)\n";
-
-    jornadasFiltradas.forEach(j => {
-      const esMelany = j.chofer.toLowerCase().includes('melany');
-      const monto = esMelany ? (j.horas * VALOR_HORA).toFixed(2) : '0.00';
-      csvContent += `"${j.chofer}",${j.fecha},${j.radio},${j.horaEntrada},${j.horaSalida},${j.horas.toFixed(2)},${monto}\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Reporte_Horas_${mesSeleccionado}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  function imprimirPlanilla() {
+    window.print();
   }
 </script>
 
