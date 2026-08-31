@@ -23,7 +23,7 @@
     }
 
     .container {
-      max-width: 650px;
+      max-width: 700px;
       margin: 0 auto;
     }
 
@@ -189,7 +189,7 @@
     .btn-edit { background: #f39c12; color: white; }
     .btn-del { background: #e74c3c; color: white; }
 
-    /* Cabecera exclusiva para Impresión */
+    /* Elementos exclusivos para Impresión */
     .print-header {
       display: none;
     }
@@ -205,7 +205,7 @@
     @media print {
       @page {
         size: A4 portrait;
-        margin: 1.5cm;
+        margin: 1.2cm;
       }
 
       body {
@@ -218,8 +218,8 @@
         max-width: 100% !important;
       }
 
-      /* Ocultar elementos innecesarios al imprimir */
-      h1, .card:nth-child(3), .btn-print, .acciones-grid, footer, .form-group label[for="filtroMes"], #filtroMes, .summary-grid {
+      /* Ocultar elementos de la pantalla al imprimir */
+      h1, .card:nth-child(3), .btn-print, .acciones-col, .summary-grid, label[for="filtroMes"], #filtroMes, footer {
         display: none !important;
       }
 
@@ -230,57 +230,49 @@
         margin: 0 !important;
       }
 
-      /* Mostrar cabecera de reporte */
       .print-header {
         display: block !important;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
       }
 
       .print-header h2 {
-        font-size: 20px;
+        font-size: 18px;
         text-align: center;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         text-decoration: underline;
       }
 
       .print-info-grid {
-        font-size: 14px;
-        line-height: 1.6;
-      }
-
-      .print-info-grid div {
-        margin-bottom: 3px;
+        font-size: 13px;
+        line-height: 1.5;
       }
 
       .choferes-box {
         border-top: 2px solid #000 !important;
         margin-top: 15px !important;
-        padding-top: 10px !important;
+        padding-top: 8px !important;
       }
 
       .chofer-linea {
-        font-size: 13px !important;
+        font-size: 12px !important;
         padding: 2px 0 !important;
       }
 
       table {
-        margin-top: 20px !important;
+        margin-top: 15px !important;
         border: 1px solid #000 !important;
       }
 
       th, td {
         border: 1px solid #000 !important;
-        padding: 6px !important;
+        padding: 5px !important;
         color: black !important;
+        font-size: 11px !important;
       }
 
       th {
-        background-color: #f2f2f2 !important;
+        background-color: #eee !important;
         -webkit-print-color-adjust: exact;
-      }
-
-      th:last-child, td:last-child {
-        display: none !important; /* Oculta columna de acciones */
       }
     }
   </style>
@@ -331,7 +323,7 @@
     </div>
   </div>
 
-  <!-- Formulario de Registro / Edición -->
+  <!-- Formulario de Registro / Edición (Oculto en impresión) -->
   <div class="card">
     <div class="card-title" id="formTitulo">✍️ Registrar Jornada</div>
 
@@ -386,10 +378,12 @@
     <table>
       <thead>
         <tr>
-          <th>Chofer</th>
-          <th>Radio</th>
-          <th>Hs</th>
-          <th>Acción</th>
+          <th>DIA</th>
+          <th>H. Entrada</th>
+          <th>H. Salida</th>
+          <th>Total Hrs</th>
+          <th>Servicio</th>
+          <th class="acciones-col">Acción</th>
         </tr>
       </thead>
       <tbody id="tablaCuerpo">
@@ -513,11 +507,10 @@
   }
 
   function renderizar() {
-    const mesSeleccionado = document.getElementById('filtroMes').value; // Formato "YYYY-MM"
+    const mesSeleccionado = document.getElementById('filtroMes').value;
     const tbody = document.getElementById('tablaCuerpo');
     tbody.innerHTML = '';
 
-    // Actualizar nombre del mes en cabecera de impresión
     if (mesSeleccionado) {
       const partesMes = mesSeleccionado.split('-');
       const numMes = parseInt(partesMes[1], 10) - 1;
@@ -547,12 +540,15 @@
       const tr = document.createElement('tr');
       const partesFecha = j.fecha.split('-');
       const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}`;
+      const detalleServicio = `${j.chofer} de ${j.horaEntrada} a ${j.horaSalida}`;
 
       tr.innerHTML = `
-        <td><strong>${j.chofer}</strong><br><small style="color:#777">${fechaFormateada} (${j.horaEntrada}-${j.horaSalida})</small></td>
-        <td>${j.radio}</td>
+        <td><strong>${fechaFormateada}</strong></td>
+        <td>${j.horaEntrada}</td>
+        <td>${j.horaSalida}</td>
         <td>${j.horas.toFixed(2)} hs</td>
-        <td>
+        <td>${detalleServicio}</td>
+        <td class="acciones-col">
           <div class="acciones-grid">
             <button class="btn-action btn-edit" onclick="editarJornada(${j.id})">✏️</button>
             <button class="btn-action btn-del" onclick="borrarJornada(${j.id})">✕</button>
@@ -562,13 +558,11 @@
       tbody.appendChild(tr);
     });
 
-    // Actualizar resúmenes
     const saldoMelany = totalHorasMelany * VALOR_HORA;
     document.getElementById('resDias').innerText = diasUnicos.size;
     document.getElementById('resHoras').innerText = totalHorasGlobal.toFixed(1);
     document.getElementById('resSaldo').innerText = "$" + Math.round(saldoMelany).toLocaleString();
 
-    // Actualizar desglose de choferes
     const divChoferes = document.getElementById('resChoferes');
     divChoferes.innerHTML = '';
     const listaNombres = Object.keys(sumaPorChofer);
