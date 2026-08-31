@@ -23,7 +23,7 @@
     }
 
     .container {
-      max-width: 650px;
+      max-width: 600px;
       margin: 0 auto;
     }
 
@@ -206,10 +206,10 @@
   <!-- Formulario de Registro -->
   <div class="card">
     <div class="card-title">✍️ Registrar Jornada</div>
-    
+
     <div class="form-group">
-      <label for="enfermero">Enfermero/a:</label>
-      <input type="text" id="enfermero" placeholder="Nombre del enfermero/a">
+      <label for="chofer">Nombre del Chofer:</label>
+      <input type="text" id="chofer" placeholder="Ej: Pedro Pérez">
     </div>
 
     <div class="row-2">
@@ -254,8 +254,7 @@
     <table>
       <thead>
         <tr>
-          <th>Fecha</th>
-          <th>Enfermero/a</th>
+          <th>Chofer</th>
           <th>Radio</th>
           <th>Hs</th>
           <th>Acción</th>
@@ -285,14 +284,14 @@
   });
 
   function guardarJornada() {
-    const enfermero = document.getElementById('enfermero').value.trim();
+    const chofer = document.getElementById('chofer').value.trim();
     const radio = document.getElementById('radio').value;
     const fecha = document.getElementById('fecha').value;
     const horaEntrada = document.getElementById('horaEntrada').value;
     const horaSalida = document.getElementById('horaSalida').value;
 
-    if (!enfermero || !fecha || !horaEntrada || !horaSalida) {
-      alert("Por favor completa el nombre del enfermero, fecha y horarios.");
+    if (!fecha || !horaEntrada || !horaSalida) {
+      alert("Por favor completa la fecha y los horarios.");
       return;
     }
 
@@ -314,7 +313,7 @@
 
     const nuevaJornada = {
       id: Date.now(),
-      enfermero,
+      chofer: chofer || 'N/A',
       radio,
       fecha,
       horaEntrada,
@@ -325,7 +324,6 @@
     jornadas.push(nuevaJornada);
     localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
 
-    // Guardar el nombre del enfermero por defecto para la próxima entrada
     document.getElementById('horaEntrada').value = '';
     document.getElementById('horaSalida').value = '';
 
@@ -360,8 +358,7 @@
       const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}`;
 
       tr.innerHTML = `
-        <td>${fechaFormateada}<br><small style="color:#777">${j.horaEntrada}-${j.horaSalida}</small></td>
-        <td><strong>${j.enfermero}</strong></td>
+        <td><strong>${j.chofer}</strong><br><small style="color:#777">${fechaFormateada} (${j.horaEntrada}-${j.horaSalida})</small></td>
         <td>${j.radio}</td>
         <td>${j.horas.toFixed(2)} hs</td>
         <td><button class="btn-del" onclick="borrarJornada(${j.id})">✕</button></td>
@@ -385,11 +382,11 @@
       return;
     }
 
-    let csvContent = "data:text/csv;charset=utf-8,Fecha,Enfermero,Radio,Entrada,Salida,Horas Trabajadas,Monto ($221/h)\n";
+    let csvContent = "data:text/csv;charset=utf-8,Chofer,Fecha,Radio,Entrada,Salida,Horas Trabajadas,Monto ($221/h)\n";
 
     jornadasFiltradas.forEach(j => {
       const monto = (j.horas * VALOR_HORA).toFixed(2);
-      csvContent += `${j.fecha},"${j.enfermero}",${j.radio},${j.horaEntrada},${j.horaSalida},${j.horas.toFixed(2)},${monto}\n`;
+      csvContent += `"${j.chofer}",${j.fecha},${j.radio},${j.horaEntrada},${j.horaSalida},${j.horas.toFixed(2)},${monto}\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
