@@ -54,7 +54,7 @@
       align-items: center;
     }
 
-    /* Grid de Resumen */
+    /* Grid de Resumen Principal */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -80,6 +80,20 @@
       font-size: 11px;
       color: #777;
       text-transform: uppercase;
+    }
+
+    /* Lista de Horas por Chofer */
+    .choferes-list {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .chofer-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 4px 0;
     }
 
     /* Formularios */
@@ -126,16 +140,17 @@
       background: var(--primary-dark);
     }
 
+    .btn-cancel {
+      background: #888;
+      margin-top: 5px;
+    }
+
     .btn-export {
       background: #27ae60;
       font-size: 12px;
       padding: 6px 12px;
       width: auto;
       margin-top: 0;
-    }
-
-    .btn-export:hover {
-      background: #219150;
     }
 
     /* Tabla de Registros */
@@ -157,15 +172,22 @@
       color: #495057;
     }
 
-    .btn-del {
-      background: #e74c3c;
-      color: white;
+    .actions-cell {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .btn-action {
       border: none;
-      padding: 4px 8px;
+      padding: 5px 8px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 12px;
     }
+
+    .btn-edit { background: #f39c12; color: white; }
+    .btn-del { background: #e74c3c; color: white; }
 
     footer {
       text-align: center;
@@ -193,23 +215,33 @@
         <div class="val" id="resDias">0</div>
       </div>
       <div class="summary-box">
-        <div class="lbl">Hs Trab.</div>
+        <div class="lbl">Total Hs.</div>
         <div class="val" id="resHoras">0.0</div>
       </div>
       <div class="summary-box">
-        <div class="lbl">A Cobrar</div>
+        <div class="lbl">Melany ($)</div>
         <div class="val" id="resSaldo">$0</div>
+      </div>
+    </div>
+
+    <!-- Desglose por Chofer -->
+    <div class="choferes-list">
+      <label style="color: #555; margin-bottom: 6px;">⏱️ Horas por Chofer:</label>
+      <div id="resChoferes">
+        <!-- Se llena con JS -->
       </div>
     </div>
   </div>
 
   <!-- Formulario de Registro -->
   <div class="card">
-    <div class="card-title">✍️ Registrar Jornada</div>
+    <div class="card-title" id="formTitulo">✍️ Registrar Jornada</div>
+
+    <input type="hidden" id="editId">
 
     <div class="form-group">
       <label for="chofer">Nombre del Chofer:</label>
-      <input type="text" id="chofer" placeholder="Ej: Pedro Pérez">
+      <input type="text" id="chofer" placeholder="Ej: Melany">
     </div>
 
     <div class="row-2">
@@ -222,6 +254,7 @@
           <option value="903">903</option>
           <option value="904">904</option>
           <option value="905">905</option>
+          <option value="Sonda">Sonda</option>
         </select>
       </div>
 
@@ -242,7 +275,8 @@
       </div>
     </div>
 
-    <button onclick="guardarJornada()">Guardar Jornada</button>
+    <button id="btnGuardar" onclick="guardarJornada()">Guardar Jornada</button>
+    <button id="btnCancelar" class="btn-cancel" onclick="cancelarEdicion()" style="display: none;">Cancelar Edición</button>
   </div>
 
   <!-- Histórico del mes -->
@@ -284,6 +318,7 @@
   });
 
   function guardarJornada() {
+    const editId = document.getElementById('editId').value;
     const chofer = document.getElementById('chofer').value.trim();
     const radio = document.getElementById('radio').value;
     const fecha = document.getElementById('fecha').value;
@@ -311,23 +346,60 @@
       return;
     }
 
-    const nuevaJornada = {
-      id: Date.now(),
-      chofer: chofer || 'N/A',
-      radio,
-      fecha,
-      horaEntrada,
-      horaSalida,
-      horas: horasTrabajadas
-    };
+    if (editId) {
+      jornadas = jornadas.map(j => j.id == editId ? {
+        id: Number(editId),
+        chofer: chofer || 'N/A',
+        radio,
+        fecha,
+        horaEntrada,
+        horaSalida,
+        horas: horasTrabajadas
+      } : j);
+    } else {
+      const nuevaJornada = {
+        id: Date.now(),
+        chofer: chofer || 'N/A',
+        radio,
+        fecha,
+        horaEntrada,
+        horaSalida,
+        horas: horasTrabajadas
+      };
+      jornadas.push(nuevaJornada);
+    }
 
-    jornadas.push(nuevaJornada);
     localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
+    cancelarEdicion();
+    renderizar();
+  }
 
+  function prepararEdicion(id) {
+    const j = jornadas.find(item => item.id === id);
+    if (!j) return;
+
+    document.getElementById('editId').value = j.id;
+    document.getElementById('chofer').value = j.chofer === 'N/A' ? '' : j.chofer;
+    document.getElementById('radio').value = j.radio;
+    document.getElementById('fecha').value = j.fecha;
+    document.getElementById('horaEntrada').value = j.horaEntrada;
+    document.getElementById('horaSalida').value = j.horaSalida;
+
+    document.getElementById('formTitulo').innerText = "✏️ Modificar Jornada";
+    document.getElementById('btnGuardar').innerText = "Actualizar Registro";
+    document.getElementById('btnCancelar').style.display = "block";
+    
+    window.scrollTo({ top: 150, behavior: 'smooth' });
+  }
+
+  function cancelarEdicion() {
+    document.getElementById('editId').value = '';
+    document.getElementById('chofer').value = '';
     document.getElementById('horaEntrada').value = '';
     document.getElementById('horaSalida').value = '';
-
-    renderizar();
+    document.getElementById('formTitulo').innerText = "✍️ Registrar Jornada";
+    document.getElementById('btnGuardar').innerText = "Guardar Jornada";
+    document.getElementById('btnCancelar').style.display = "none";
   }
 
   function borrarJornada(id) {
@@ -346,12 +418,21 @@
     const jornadasFiltradas = jornadas.filter(j => j.fecha.startsWith(mesSeleccionado));
     jornadasFiltradas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
-    let totalHoras = 0;
+    let totalHorasGlobal = 0;
+    let totalHorasMelany = 0;
     const diasUnicos = new Set();
+    const horasPorChofer = {};
 
     jornadasFiltradas.forEach(j => {
-      totalHoras += j.horas;
+      totalHorasGlobal += j.horas;
       diasUnicos.add(j.fecha);
+
+      const choferNom = j.chofer.trim();
+      horasPorChofer[choferNom] = (horasPorChofer[choferNom] || 0) + j.horas;
+
+      if (choferNom.toLowerCase().includes('melany')) {
+        totalHorasMelany += j.horas;
+      }
 
       const tr = document.createElement('tr');
       const partesFecha = j.fecha.split('-');
@@ -361,16 +442,37 @@
         <td><strong>${j.chofer}</strong><br><small style="color:#777">${fechaFormateada} (${j.horaEntrada}-${j.horaSalida})</small></td>
         <td>${j.radio}</td>
         <td>${j.horas.toFixed(2)} hs</td>
-        <td><button class="btn-del" onclick="borrarJornada(${j.id})">✕</button></td>
+        <td>
+          <div class="actions-cell">
+            <button class="btn-action btn-edit" onclick="prepararEdicion(${j.id})">✏️</button>
+            <button class="btn-action btn-del" onclick="borrarJornada(${j.id})">✕</button>
+          </div>
+        </td>
       `;
       tbody.appendChild(tr);
     });
 
-    const saldoTotal = totalHoras * VALOR_HORA;
-
+    // Render summary boxes
+    const saldoMelany = totalHorasMelany * VALOR_HORA;
     document.getElementById('resDias').innerText = diasUnicos.size;
-    document.getElementById('resHoras').innerText = totalHoras.toFixed(1);
-    document.getElementById('resSaldo').innerText = "$" + Math.round(saldoTotal).toLocaleString();
+    document.getElementById('resHoras').innerText = totalHorasGlobal.toFixed(1);
+    document.getElementById('resSaldo').innerText = "$" + Math.round(saldoMelany).toLocaleString();
+
+    // Render horas por chofer list
+    const choferesContainer = document.getElementById('resChoferes');
+    choferesContainer.innerHTML = '';
+    const choferesNombres = Object.keys(horasPorChofer);
+
+    if (choferesNombres.length === 0) {
+      choferesContainer.innerHTML = '<div class="chofer-item" style="color:#888;">No hay registros este mes</div>';
+    } else {
+      choferesNombres.forEach(nombre => {
+        const div = document.createElement('div');
+        div.className = 'chofer-item';
+        div.innerHTML = `<span><strong>${nombre}:</strong></span> <span>${horasPorChofer[nombre].toFixed(2)} hs</span>`;
+        choferesContainer.appendChild(div);
+      });
+    }
   }
 
   function exportarExcel() {
@@ -382,10 +484,11 @@
       return;
     }
 
-    let csvContent = "data:text/csv;charset=utf-8,Chofer,Fecha,Radio,Entrada,Salida,Horas Trabajadas,Monto ($221/h)\n";
+    let csvContent = "data:text/csv;charset=utf-8,Chofer,Fecha,Radio,Entrada,Salida,Horas Trabajadas,Monto Melany ($221/h)\n";
 
     jornadasFiltradas.forEach(j => {
-      const monto = (j.horas * VALOR_HORA).toFixed(2);
+      const esMelany = j.chofer.toLowerCase().includes('melany');
+      const monto = esMelany ? (j.horas * VALOR_HORA).toFixed(2) : '0.00';
       csvContent += `"${j.chofer}",${j.fecha},${j.radio},${j.horaEntrada},${j.horaSalida},${j.horas.toFixed(2)},${monto}\n`;
     });
 
