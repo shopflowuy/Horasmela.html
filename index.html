@@ -23,7 +23,7 @@
     }
 
     .container {
-      max-width: 700px;
+      max-width: 750px;
       margin: 0 auto;
     }
 
@@ -54,7 +54,6 @@
       align-items: center;
     }
 
-    /* Resumen Principal */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -82,7 +81,6 @@
       text-transform: uppercase;
     }
 
-    /* Lista de Horas por Chofer */
     .choferes-box {
       margin-top: 15px;
       padding-top: 10px;
@@ -96,7 +94,6 @@
       padding: 4px 0;
     }
 
-    /* Formularios */
     .form-group {
       margin-bottom: 12px;
     }
@@ -153,7 +150,6 @@
       margin-top: 0;
     }
 
-    /* Tabla */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -189,7 +185,6 @@
     .btn-edit { background: #f39c12; color: white; }
     .btn-del { background: #e74c3c; color: white; }
 
-    /* Elementos exclusivos para Impresión */
     .print-header {
       display: none;
     }
@@ -201,7 +196,7 @@
       color: #888;
     }
 
-    /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN (A4) */
+    /* REGLAS EXCLUSIVAS PARA IMPRESIÓN EN FORMATO A4 */
     @media print {
       @page {
         size: A4 portrait;
@@ -218,8 +213,8 @@
         max-width: 100% !important;
       }
 
-      /* Ocultar elementos de la pantalla al imprimir */
-      h1, .card:nth-child(3), .btn-print, .acciones-col, .summary-grid, label[for="filtroMes"], #filtroMes, footer {
+      /* OCULTAR FORMULARIO DE CARGA, BOTONES Y ELEMENTOS DE PANTALLA */
+      h1, #cardFormularioRegistro, .btn-print, .acciones-col, .summary-grid, label[for="filtroMes"], #filtroMes, footer {
         display: none !important;
       }
 
@@ -244,13 +239,16 @@
 
       .print-info-grid {
         font-size: 13px;
-        line-height: 1.5;
+        line-height: 1.6;
       }
 
+      /* MANTENER VISIBLE LA SUMA DE HORAS POR CHOFER */
       .choferes-box {
+        display: block !important;
         border-top: 2px solid #000 !important;
         margin-top: 15px !important;
         padding-top: 8px !important;
+        margin-bottom: 15px !important;
       }
 
       .chofer-linea {
@@ -261,11 +259,12 @@
       table {
         margin-top: 15px !important;
         border: 1px solid #000 !important;
+        width: 100% !important;
       }
 
       th, td {
         border: 1px solid #000 !important;
-        padding: 5px !important;
+        padding: 6px !important;
         color: black !important;
         font-size: 11px !important;
       }
@@ -282,7 +281,7 @@
 <div class="container">
   <h1>📋 HorasMel - Registro Mensual</h1>
 
-  <!-- Encabezado exclusivo para Impresión A4 -->
+  <!-- Encabezado de Impresión A4 -->
   <div class="print-header">
     <h2>Información de Horas de Arrendadores</h2>
     <div class="print-info-grid">
@@ -293,7 +292,7 @@
     </div>
   </div>
 
-  <!-- Filtro y Resumen -->
+  <!-- Resumen e Horas por Chofer (Permanece en impresión) -->
   <div class="card">
     <div class="form-group">
       <label for="filtroMes">Filtrar por Mes:</label>
@@ -323,8 +322,8 @@
     </div>
   </div>
 
-  <!-- Formulario de Registro / Edición (Oculto en impresión) -->
-  <div class="card">
+  <!-- Formulario de Registro (Exclusivo pantalla, 100% Oculto al imprimir) -->
+  <div class="card" id="cardFormularioRegistro">
     <div class="card-title" id="formTitulo">✍️ Registrar Jornada</div>
 
     <input type="hidden" id="editId">
@@ -369,7 +368,7 @@
     <button id="btnCancelar" class="btn-cancel" onclick="limpiarFormulario()" style="display: none;">Cancelar Edición</button>
   </div>
 
-  <!-- Histórico -->
+  <!-- Tabla de Detalle del Mes -->
   <div class="card">
     <div class="card-title">
       <span>📅 Detalle del Mes</span>
@@ -485,7 +484,7 @@
     document.getElementById('btnGuardar').innerText = "Guardar Cambios";
     document.getElementById('btnCancelar').style.display = "block";
 
-    window.scrollTo({ top: 150, behavior: 'smooth' });
+    window.scrollTo({ top: 200, behavior: 'smooth' });
   }
 
   function limpiarFormulario() {
