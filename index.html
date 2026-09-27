@@ -203,7 +203,6 @@
       color: #888;
     }
 
-    /* REGLAS EXCLUSIVAS PARA IMPRESIÓN EN FORMATO A4 */
     @media print {
       @page {
         size: A4 portrait;
@@ -220,7 +219,6 @@
         max-width: 100% !important;
       }
 
-      /* OCULTAR FORMULARIO DE CARGA, BOTONES Y ELEMENTOS DE PANTALLA */
       h1, #cardFormularioRegistro, .btn-print, .acciones-col, .summary-grid, label[for="filtroMes"], #filtroMes, .sync-indicator, footer {
         display: none !important;
       }
@@ -249,7 +247,6 @@
         line-height: 1.6;
       }
 
-      /* MANTENER VISIBLE LA SUMA DE HORAS POR CHOFER */
       .choferes-box {
         display: block !important;
         border-top: 2px solid #000 !important;
@@ -263,7 +260,7 @@
         padding: 2px 0 !important;
       }
 
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9eyT6XjWXLiOY2oSkQJJlU2b8ASxTUQx8hoV7mjx9xWilp_K2_JL0XWuv3VFmD4A1/exec";
+      table {
         margin-top: 15px !important;
         border: 1px solid #000 !important;
         width: 100% !important;
@@ -289,7 +286,6 @@
   <h1>📋 HorasMel - Registro Mensual</h1>
   <div class="sync-indicator" id="estadoSinc">🔄 Cargando datos desde la nube...</div>
 
-  <!-- Encabezado de Impresión A4 -->
   <div class="print-header">
     <h2>Información de Horas de Arrendadores</h2>
     <div class="print-info-grid">
@@ -300,7 +296,6 @@
     </div>
   </div>
 
-  <!-- Resumen e Horas por Chofer (Permanece en impresión) -->
   <div class="card">
     <div class="form-group">
       <label for="filtroMes">Filtrar por Mes:</label>
@@ -324,13 +319,10 @@
 
     <div class="choferes-box">
       <label style="font-weight: bold; margin-bottom: 6px; display: block;">⏱️ Suma de Horas por Chofer:</label>
-      <div id="resChoferes">
-        <!-- Generado con JS -->
-      </div>
+      <div id="resChoferes"></div>
     </div>
   </div>
 
-  <!-- Formulario de Registro (Exclusivo pantalla, 100% Oculto al imprimir) -->
   <div class="card" id="cardFormularioRegistro">
     <div class="card-title" id="formTitulo">✍️ Registrar Jornada</div>
 
@@ -376,7 +368,6 @@
     <button id="btnCancelar" class="btn-cancel" onclick="limpiarFormulario()" style="display: none;">Cancelar Edición</button>
   </div>
 
-  <!-- Tabla de Detalle del Mes -->
   <div class="card">
     <div class="card-title">
       <span>📅 Detalle del Mes</span>
@@ -393,9 +384,7 @@
           <th class="acciones-col">Acción</th>
         </tr>
       </thead>
-      <tbody id="tablaCuerpo">
-        <!-- Generado con JS -->
-      </tbody>
+      <tbody id="tablaCuerpo"></tbody>
     </table>
   </div>
 
@@ -403,8 +392,7 @@
 </div>
 
 <script>
-  // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
-  const SCRIPT_URL = "AQUÍ_PEGA_TU_URL_DE_APPS_SCRIPT";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqjf1SNq6aFKJMtsXJqdftsnd7CWA2uexeyFXCZaiHYZt7U3V_E0ujebyXpZUPo27W9w/exec";
 
   const VALOR_HORA = 221;
   let jornadas = [];
@@ -431,14 +419,13 @@
     fetch(SCRIPT_URL)
       .then(res => res.json())
       .then(data => {
-        jornadas = data || [];
+        jornadas = Array.isArray(data) ? data : [];
         localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
         estado.innerText = "✅ Sincronizado en tiempo real";
         renderizar();
       })
       .catch(err => {
         console.error("Error al cargar:", err);
-        // Fallback a almacenamiento local si no hay conexión
         jornadas = JSON.parse(localStorage.getItem('horas_mel_data')) || [];
         estado.innerText = "⚠️ Modo sin conexión (datos locales)";
         renderizar();
@@ -449,19 +436,24 @@
     const estado = document.getElementById('estadoSinc');
     estado.innerText = "⏳ Guardando en la nube...";
 
+    localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
+
     fetch(SCRIPT_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(jornadas)
     })
-    .then(() => {
-      estado.innerText = "✅ Cambios guardados en la nube";
-      localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
+    .then(res => res.json())
+    .then(res => {
+      if (res && res.status === "success") {
+        estado.innerText = "✅ Cambios guardados en la nube";
+      } else {
+        estado.innerText = "⚠️ Guardado local (error en respuesta de nube)";
+      }
     })
     .catch(err => {
-      console.error(err);
-      estado.innerText = "❌ Error al guardar en la nube";
+      console.error("Error al guardar:", err);
+      estado.innerText = "⚠️ Guardado local (sin conexión)";
     });
   }
 
