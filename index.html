@@ -189,6 +189,13 @@
       display: none;
     }
 
+    .sync-indicator {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
     footer {
       text-align: center;
       margin-top: 30px;
@@ -214,7 +221,7 @@
       }
 
       /* OCULTAR FORMULARIO DE CARGA, BOTONES Y ELEMENTOS DE PANTALLA */
-      h1, #cardFormularioRegistro, .btn-print, .acciones-col, .summary-grid, label[for="filtroMes"], #filtroMes, footer {
+      h1, #cardFormularioRegistro, .btn-print, .acciones-col, .summary-grid, label[for="filtroMes"], #filtroMes, .sync-indicator, footer {
         display: none !important;
       }
 
@@ -256,7 +263,7 @@
         padding: 2px 0 !important;
       }
 
-      table {
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9eyT6XjWXLiOY2oSkQJJlU2b8ASxTUQx8hoV7mjx9xWilp_K2_JL0XWuv3VFmD4A1/exec";
         margin-top: 15px !important;
         border: 1px solid #000 !important;
         width: 100% !important;
@@ -280,6 +287,7 @@
 
 <div class="container">
   <h1>📋 HorasMel - Registro Mensual</h1>
+  <div class="sync-indicator" id="estadoSinc">🔄 Cargando datos desde la nube...</div>
 
   <!-- Encabezado de Impresión A4 -->
   <div class="print-header">
@@ -395,8 +403,11 @@
 </div>
 
 <script>
+  // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+  const SCRIPT_URL = "AQUÍ_PEGA_TU_URL_DE_APPS_SCRIPT";
+
   const VALOR_HORA = 221;
-  let jornadas = JSON.parse(localStorage.getItem('horas_mel_data')) || [];
+  let jornadas = [];
 
   const NOMBRES_MESES = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -410,8 +421,49 @@
     const mesActual = hoy.toISOString().slice(0, 7);
     document.getElementById('filtroMes').value = mesActual;
 
-    renderizar();
+    cargarDesdeNube();
   });
+
+  function cargarDesdeNube() {
+    const estado = document.getElementById('estadoSinc');
+    estado.innerText = "🔄 Sincronizando con Google Drive...";
+
+    fetch(SCRIPT_URL)
+      .then(res => res.json())
+      .then(data => {
+        jornadas = data || [];
+        localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
+        estado.innerText = "✅ Sincronizado en tiempo real";
+        renderizar();
+      })
+      .catch(err => {
+        console.error("Error al cargar:", err);
+        // Fallback a almacenamiento local si no hay conexión
+        jornadas = JSON.parse(localStorage.getItem('horas_mel_data')) || [];
+        estado.innerText = "⚠️ Modo sin conexión (datos locales)";
+        renderizar();
+      });
+  }
+
+  function guardarEnNube() {
+    const estado = document.getElementById('estadoSinc');
+    estado.innerText = "⏳ Guardando en la nube...";
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(jornadas)
+    })
+    .then(() => {
+      estado.innerText = "✅ Cambios guardados en la nube";
+      localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
+    })
+    .catch(err => {
+      console.error(err);
+      estado.innerText = "❌ Error al guardar en la nube";
+    });
+  }
 
   function guardarJornada() {
     const editId = document.getElementById('editId').value;
@@ -464,9 +516,9 @@
       jornadas.push(nuevaJornada);
     }
 
-    localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
     limpiarFormulario();
     renderizar();
+    guardarEnNube();
   }
 
   function editarJornada(id) {
@@ -500,8 +552,8 @@
   function borrarJornada(id) {
     if (confirm("¿Borrar este registro?")) {
       jornadas = jornadas.filter(j => j.id !== id);
-      localStorage.setItem('horas_mel_data', JSON.stringify(jornadas));
       renderizar();
+      guardarEnNube();
     }
   }
 
@@ -517,7 +569,7 @@
       document.getElementById('printMesTexto').innerText = `${NOMBRES_MESES[numMes]} ${anio}`;
     }
 
-    const jornadasFiltradas = jornadas.filter(j => j.fecha.startsWith(mesSeleccionado));
+    const jornadasFiltradas = jornadas.filter(j => j.fecha && j.fecha.startsWith(mesSeleccionado));
     jornadasFiltradas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
     let totalHorasGlobal = 0;
