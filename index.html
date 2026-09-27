@@ -377,6 +377,7 @@
       <thead>
         <tr>
           <th>DIA</th>
+          <th>Radio</th>
           <th>H. Entrada</th>
           <th>H. Salida</th>
           <th>Total Hrs</th>
@@ -489,7 +490,7 @@
       jornadas = jornadas.map(j => j.id == editId ? {
         id: Number(editId),
         chofer: chofer || 'Sin nombre',
-        radio,
+        radio: radio || '900',
         fecha,
         horaEntrada,
         horaSalida,
@@ -499,7 +500,7 @@
       const nuevaJornada = {
         id: Date.now(),
         chofer: chofer || 'Sin nombre',
-        radio,
+        radio: radio || '900',
         fecha,
         horaEntrada,
         horaSalida,
@@ -519,7 +520,7 @@
 
     document.getElementById('editId').value = reg.id;
     document.getElementById('chofer').value = reg.chofer === 'Sin nombre' ? '' : reg.chofer;
-    document.getElementById('radio').value = reg.radio;
+    document.getElementById('radio').value = reg.radio || '900';
     document.getElementById('fecha').value = reg.fecha;
     document.getElementById('horaEntrada').value = reg.horaEntrada;
     document.getElementById('horaSalida').value = reg.horaSalida;
@@ -584,9 +585,11 @@
       const partesFecha = j.fecha.split('-');
       const fechaFormateada = `${partesFecha[2]}/${partesFecha[1]}`;
       const detalleServicio = `${j.chofer} de ${j.horaEntrada} a ${j.horaSalida}`;
+      const valorRadio = j.radio || '-';
 
       tr.innerHTML = `
         <td><strong>${fechaFormateada}</strong></td>
+        <td>${valorRadio}</td>
         <td>${j.horaEntrada}</td>
         <td>${j.horaSalida}</td>
         <td>${j.horas.toFixed(2)} hs</td>
@@ -628,4 +631,4 @@
 </script>
 
 </body>
-</html> 
+</html>
